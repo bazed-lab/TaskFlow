@@ -1,21 +1,46 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 
-class Auth(BaseModel):
+#-------------Request-------------
+
+#POST /auth/signup
+class UserRegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
+    username: str = Field(min_length=3, max_length=50)
 
-class AuthLoginResponse(Auth):
+#POST /auth/login
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+#POST /auth/refresh
+#POST /auth/logout
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+#PATCH /users/me
+class UserUpdateRequest(BaseModel):
+    username: str | None = None
+    email: EmailStr | None = None
+    password: str | None = None
+
+#-------------Response-------------
+
+#POST /auth/login
+#POST /auth/refresh
+class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = 'bearer'
+    token_type: str = "bearer"
 
-class AuthSingupResponse(BaseModel):
+#GET /users/me
+#POST /auth/signup
+class UserResponse(BaseModel):
+    id: int
     email: EmailStr
     username: str
+    is_active: bool
+    is_superuser: bool = False
 
-class AuthSingup(Auth):
-    username: str
-
-class AuthRefreshResponse(Auth):
-    refresh_token: str
+    model_config = ConfigDict(from_attributes=True)
