@@ -27,6 +27,10 @@ class UserUpdateRequest(BaseModel):
 
 #-------------Response-------------
 
+#POST /auth/signup
+class MessageResponse(BaseModel):
+    message: str
+
 #POST /auth/login
 #POST /auth/refresh
 class TokenResponse(BaseModel):
