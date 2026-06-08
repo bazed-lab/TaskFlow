@@ -29,4 +29,11 @@ def create_refresh_token(user_id: int) -> tuple[str, datetime]:
 
 def decode_access_token(token: str) -> dict:
     settings = get_settings()
-    return jwt.decode(token, settings.SECRET_KEY, algorithm=[settings.JWT_ALGORITHM])
+    return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+
+def decode_refresh_token(token: str) -> dict:
+    settings = get_settings()
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    if payload.get("type") != "refresh":
+        raise ValueError("Token is not a refresh token")
+    return payload
