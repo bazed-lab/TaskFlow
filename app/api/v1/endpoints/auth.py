@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.session import get_db
@@ -16,15 +16,26 @@ auth_router = APIRouter()
 users_router = APIRouter()
 
 _refresh_blacklist: set[str] = set()
-http_bearer = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+    request: Request,
     session: AsyncSession = Depends(get_db),
 ):
+    token = None
+
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+
+    if not token:
+        token = request.cookies.get("access_token")
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = decode_access_token(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
@@ -110,7 +121,6 @@ async def refresh(
 @auth_router.post("/logout", response_model=MessageResponse)
 async def logout(
         payload: RefreshTokenRequest,
-        current_user = Depends(get_current_user),
 ):
     _refresh_blacklist.add(payload.refresh_token)
     return MessageResponse(message="Logged out successfully")
