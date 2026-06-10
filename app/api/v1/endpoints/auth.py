@@ -121,6 +121,7 @@ async def refresh(
 @auth_router.post("/logout", response_model=MessageResponse)
 async def logout(
         payload: RefreshTokenRequest,
+        current_user = Depends(get_current_user),
 ):
     _refresh_blacklist.add(payload.refresh_token)
     return MessageResponse(message="Logged out successfully")
