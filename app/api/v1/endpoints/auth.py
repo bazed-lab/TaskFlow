@@ -8,7 +8,7 @@ from schemas.auth import (
     MessageResponse, RefreshTokenRequest, UserUpdateRequest, UserResponse,
 )
 from services.auth_service import AuthService
-from core.security import create_access_token, decode_refresh_token, decode_access_token, hash_password
+from core.security import create_access_token, decode_refresh_token, decode_access_token, hash_password, verify_password
 from core.config import get_settings
 from repositories.repositories import UserRepository
 
@@ -155,6 +155,10 @@ async def update_me(
         current_user.email = payload.email
 
     if payload.password is not None:
+        if payload.old_password is None:
+            raise HTTPException(status_code=400, detail="Old password is required to set a new password")
+        if not verify_password(payload.old_password, current_user.password_hash):
+            raise HTTPException(status_code=400, detail="Old password is incorrect")
         current_user.password_hash = hash_password(payload.password)
 
     await session.flush()

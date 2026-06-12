@@ -24,6 +24,7 @@ class UserUpdateRequest(BaseModel):
     username: str | None = None
     email: EmailStr | None = None
     password: str | None = None
+    old_password: str | None = None
 
 #-------------Response-------------
 
