@@ -82,8 +82,8 @@ class TestGetProject:
         resp = await client.get("/projects/nonexistent-uuid", headers=auth_headers)
         assert resp.status_code == 404
 
-    async def test_get_project_unauthorized(self, client, auth_headers, created_project):
-        resp = await client.get(f"/projects/{created_project['id']}")
+    async def test_get_project_unauthorized(self, client):
+        resp = await client.get("/projects/some-project-id")
         assert resp.status_code == 401
 
     async def test_get_project_not_member(self, client, second_auth_headers, created_project):
