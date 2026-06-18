@@ -32,6 +32,17 @@ async def created_project(client, auth_headers, project_data):
     return resp.json()
 
 
+@pytest.fixture
+def project_with_secret_data():
+    return {"name": "Secret Project", "description": "With invite", "secret_key": "mysecret123"}
+
+
+@pytest_asyncio.fixture
+async def created_project_with_secret(client, auth_headers, project_with_secret_data):
+    resp = await client.post("/projects", json=project_with_secret_data, headers=auth_headers)
+    return resp.json()
+
+
 class TestCreateProject:
     async def test_create_success(self, client, auth_headers, project_data):
         resp = await client.post("/projects", json=project_data, headers=auth_headers)
@@ -218,3 +229,43 @@ class TestRemoveMember:
             headers=auth_headers,
         )
         assert resp.status_code == 400
+
+
+class TestJoinProject:
+    async def test_join_success(self, client, second_auth_headers, created_project_with_secret):
+        project_id = created_project_with_secret["id"]
+        invite = f"{project_id}/mysecret123"
+
+        resp = await client.post("/projects/join", json={"invite": invite}, headers=second_auth_headers)
+        assert resp.status_code == 201
+        assert resp.json()["role"] == "member"
+
+    async def test_join_invalid_format(self, client, second_auth_headers):
+        resp = await client.post("/projects/join", json={"invite": "badformat"}, headers=second_auth_headers)
+        assert resp.status_code == 400
+
+    async def test_join_wrong_secret(self, client, second_auth_headers, created_project_with_secret):
+        invite = f"{created_project_with_secret['id']}/wrongkey"
+
+        resp = await client.post("/projects/join", json={"invite": invite}, headers=second_auth_headers)
+        assert resp.status_code == 403
+
+    async def test_join_project_not_found(self, client, second_auth_headers):
+        resp = await client.post("/projects/join", json={"invite": "nonexistent-uuid/key"}, headers=second_auth_headers)
+        assert resp.status_code == 404
+
+    async def test_join_no_secret_key(self, client, second_auth_headers, created_project):
+        invite = f"{created_project['id']}/anykey"
+
+        resp = await client.post("/projects/join", json={"invite": invite}, headers=second_auth_headers)
+        assert resp.status_code == 400
+
+    async def test_join_already_member(self, client, auth_headers, created_project_with_secret):
+        invite = f"{created_project_with_secret['id']}/mysecret123"
+
+        resp = await client.post("/projects/join", json={"invite": invite}, headers=auth_headers)
+        assert resp.status_code == 400
+
+    async def test_join_unauthorized(self, client):
+        resp = await client.post("/projects/join", json={"invite": "any-uuid/key"})
+        assert resp.status_code == 401
