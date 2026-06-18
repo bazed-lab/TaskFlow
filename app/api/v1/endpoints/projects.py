@@ -13,12 +13,13 @@ from api.v1.endpoints.auth import get_current_user
 project_router = APIRouter()
 
 
-@project_router.post("", response_model=ProjectResponse, status_code=201)
+@project_router.post("", response_model=ProjectResponse, status_code=201, summary="Создать проект")
 async def create_project(
     payload: CreateProjectRequest,
     current_user=Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
+    """Создаёт новый проект. Создатель автоматически становится admin."""
     service = ProjectService(session)
     project = await service.create_project(
         name=payload.name,
@@ -28,33 +29,36 @@ async def create_project(
     return project
 
 
-@project_router.get("", response_model=list[ProjectResponse])
+@project_router.get("", response_model=list[ProjectResponse], summary="Список проектов")
 async def get_projects(
     current_user=Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
+    """Возвращает все проекты, где текущий пользователь является участником."""
     service = ProjectService(session)
     return await service.get_user_projects(current_user.id)
 
 
-@project_router.get("/{project_id}", response_model=ProjectDetailResponse)
+@project_router.get("/{project_id}", response_model=ProjectDetailResponse, summary="Детали проекта")
 async def get_project(
     project_id: str,
     current_user=Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
+    """Возвращает информацию о проекте и список его участников."""
     service = ProjectService(session)
     project, members = await service.get_project(project_id, current_user.id)
     return ProjectDetailResponse(project=project, members=members)
 
 
-@project_router.post("/{project_id}/members", response_model=ProjectMemberResponse, status_code=201)
+@project_router.post("/{project_id}/members", response_model=ProjectMemberResponse, status_code=201, summary="Добавить участника")
 async def add_member(
     project_id: str,
     payload: AddProjectMemberRequest,
     current_user=Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
+    """Добавляет пользователя в проект. Только для admin."""
     service = ProjectService(session)
     member = await service.add_member(
         project_id=project_id,
@@ -65,7 +69,7 @@ async def add_member(
     return member
 
 
-@project_router.patch("/{project_id}/members/{user_id}", response_model=ProjectMemberResponse)
+@project_router.patch("/{project_id}/members/{user_id}", response_model=ProjectMemberResponse, summary="Изменить роль участника")
 async def update_member_role(
     project_id: str,
     user_id: int,
@@ -73,6 +77,7 @@ async def update_member_role(
     current_user=Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
+    """Меняет роль участника (admin/member). Только для admin."""
     service = ProjectService(session)
     member = await service.update_member_role(
         project_id=project_id,
@@ -83,13 +88,14 @@ async def update_member_role(
     return member
 
 
-@project_router.delete("/{project_id}/members/{user_id}", response_model=MessageResponse)
+@project_router.delete("/{project_id}/members/{user_id}", response_model=MessageResponse, summary="Удалить участника")
 async def remove_member(
     project_id: str,
     user_id: int,
     current_user=Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ):
+    """Удаляет участника из проекта. Нельзя удалить владельца. Только для admin."""
     service = ProjectService(session)
     await service.remove_member(project_id, current_user.id, user_id)
     return MessageResponse(message="Member removed")
