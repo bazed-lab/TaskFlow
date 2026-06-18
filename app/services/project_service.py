@@ -52,20 +52,32 @@ class ProjectService:
         if existing:
             raise HTTPException(status_code=400, detail="You are already a member")
 
-        return await self.project_repo.add_member(project_id=project_id, user_id=user_id, role="member")
+        member = await self.project_repo.add_member(project_id=project_id, user_id=user_id, role="member")
+        return await self._enrich_member(member)
 
-    async def add_member(self, project_id: str, current_user_id: int, target_user_id: int, role: str = "member"):
+    async def _enrich_member(self, member):
+        user = await self.user_repo.get_by_id(member.user_id)
+        return {
+            "id": member.id,
+            "user_id": member.user_id,
+            "role": member.role,
+            "username": user.username if user else "Unknown",
+            "handle": user.handle if user else "@unknown",
+        }
+
+    async def add_member(self, project_id: str, current_user_id: int, handle: str, role: str = "member"):
         project = await self.project_repo.get_by_id(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         await self.check_admin(project_id, current_user_id)
-        user = await self.user_repo.get_by_id(target_user_id)
+        user = await self.user_repo.get_by_handle(handle)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        existing = await self.project_repo.get_member(project_id, target_user_id)
+        existing = await self.project_repo.get_member(project_id, user.id)
         if existing:
             raise HTTPException(status_code=400, detail="User already a member")
-        return await self.project_repo.add_member(project_id=project_id, user_id=target_user_id, role=role)
+        member = await self.project_repo.add_member(project_id=project_id, user_id=user.id, role=role)
+        return await self._enrich_member(member)
 
     async def update_member_role(self, project_id: str, current_user_id: int, target_user_id: int, role: str):
         project = await self.project_repo.get_by_id(project_id)
@@ -75,7 +87,8 @@ class ProjectService:
         member = await self.project_repo.get_member(project_id, target_user_id)
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
-        return await self.project_repo.update_member_role(project_id, target_user_id, role)
+        member = await self.project_repo.update_member_role(project_id, target_user_id, role)
+        return await self._enrich_member(member)
 
     async def remove_member(self, project_id: str, current_user_id: int, target_user_id: int):
         project = await self.project_repo.get_by_id(project_id)

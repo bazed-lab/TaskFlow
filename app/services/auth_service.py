@@ -10,14 +10,17 @@ class AuthService:
     def __init__(self, session: AsyncSession) -> None:
         self.users = UserRepository(session)
 
-    async def singup(self, email: str, password: str, username: str):
+    async def singup(self, email: str, password: str, username: str, handle: str):
         if await self.users.get_by_email(email):
             raise HTTPException(status_code=400, detail="Email already registered")
         if await self.users.get_by_username(username):
             raise HTTPException(status_code=400, detail="Username already registered")
+        if await self.users.get_by_handle(handle):
+            raise HTTPException(status_code=400, detail="Handle already taken")
         user = await self.users.create(
             email=email,
             username=username,
+            handle=handle,
             password_hash=hash_password(password),
         )
         return user

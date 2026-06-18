@@ -12,7 +12,7 @@ class CreateProjectRequest(BaseModel):
 
 
 class AddProjectMemberRequest(BaseModel):
-    user_id: int
+    handle: str = Field(min_length=2, max_length=50, pattern=r"^@[a-zA-Z0-9_.-]+$")
     role: str = Field(default="member", pattern="^(admin|member)$")
 
 

@@ -56,9 +56,9 @@ async def signup(
         payload: UserRegisterRequest,
         session: AsyncSession = Depends(get_db)
         ):
-    """Создаёт нового пользователя с email, username и паролем."""
+    """Создаёт нового пользователя с email, username, handle и паролем."""
     service = AuthService(session)
-    await service.singup(email=payload.email, password=payload.password, username=payload.username)
+    await service.singup(email=payload.email, password=payload.password, username=payload.username, handle=payload.handle)
     return MessageResponse(message="Вы зарегистрировались")
 
 
@@ -153,6 +153,12 @@ async def update_me(
         if existing and existing.id != current_user.id:
             raise HTTPException(status_code=400, detail="Username already taken")
         current_user.username = payload.username
+
+    if payload.handle is not None and payload.handle != current_user.handle:
+        existing = await repo.get_by_handle(payload.handle)
+        if existing and existing.id != current_user.id:
+            raise HTTPException(status_code=400, detail="Handle already taken")
+        current_user.handle = payload.handle
 
     if payload.email is not None and payload.email != current_user.email:
         existing = await repo.get_by_email(payload.email)

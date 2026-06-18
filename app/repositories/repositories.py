@@ -20,6 +20,9 @@ class UserRepository:
     async def get_by_username(self, username: str):
         return await self.session.scalar(select(User).where(User.username == username))
 
+    async def get_by_handle(self, handle: str):
+        return await self.session.scalar(select(User).where(User.handle == handle))
+
     async def create(self, **kwargs):
         user = User(**kwargs)
         self.session.add(user)
@@ -66,13 +69,13 @@ class ProjectRepository:
 
     async def get_members(self, project_id: str):
         result = await self.session.execute(
-            select(ProjectMember.id, ProjectMember.user_id, ProjectMember.role, User.username)
+            select(ProjectMember.id, ProjectMember.user_id, ProjectMember.role, User.username, User.handle)
             .join(User, ProjectMember.user_id == User.id)
             .where(ProjectMember.project_id == project_id)
         )
         rows = result.all()
         return [
-            {"id": row.id, "user_id": row.user_id, "role": row.role, "username": row.username}
+            {"id": row.id, "user_id": row.user_id, "role": row.role, "username": row.username, "handle": row.handle}
             for row in rows
         ]
 

@@ -76,7 +76,7 @@ async def add_member(
     member = await service.add_member(
         project_id=project_id,
         current_user_id=current_user.id,
-        target_user_id=payload.user_id,
+        handle=payload.handle,
         role=payload.role,
     )
     return member
