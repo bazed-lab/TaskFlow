@@ -24,6 +24,7 @@ async def create_project(
     project = await service.create_project(
         name=payload.name,
         description=payload.description,
+        secret_key=payload.secret_key,
         owner_id=current_user.id,
     )
     return project
