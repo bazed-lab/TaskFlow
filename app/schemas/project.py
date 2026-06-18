@@ -20,13 +20,16 @@ class UpdateMemberRoleRequest(BaseModel):
     role: str = Field(pattern="^(admin|member)$")
 
 
+class JoinProjectRequest(BaseModel):
+    invite: str
+
+
 #-------------Response-------------
 
 class ProjectResponse(BaseModel):
     id: str
     name: str
     description: str | None = None
-    secret_key: str | None = None
     owner_id: int
     is_active: bool
     created_at: datetime
