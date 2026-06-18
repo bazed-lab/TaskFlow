@@ -6,6 +6,7 @@ from schemas.auth import MessageResponse
 from schemas.project import (
     CreateProjectRequest, ProjectResponse, ProjectDetailResponse,
     ProjectMemberResponse, AddProjectMemberRequest, UpdateMemberRoleRequest,
+    JoinProjectRequest,
 )
 from services.project_service import ProjectService
 from api.v1.endpoints.auth import get_current_user
@@ -38,6 +39,17 @@ async def get_projects(
     """Возвращает все проекты, где текущий пользователь является участником."""
     service = ProjectService(session)
     return await service.get_user_projects(current_user.id)
+
+
+@project_router.post("/join", response_model=ProjectMemberResponse, status_code=201, summary="Присоединиться по приглашению")
+async def join_project(
+    payload: JoinProjectRequest,
+    current_user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    """Вступление в проект по ссылке вида UUID/SECRET_KEY."""
+    service = ProjectService(session)
+    return await service.join_project(payload.invite, current_user.id)
 
 
 @project_router.get("/{project_id}", response_model=ProjectDetailResponse, summary="Детали проекта")
