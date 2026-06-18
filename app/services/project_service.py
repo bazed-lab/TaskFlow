@@ -34,6 +34,26 @@ class ProjectService:
         members = await self.project_repo.get_members(project_id)
         return project, members
 
+    async def join_project(self, invite: str, user_id: int):
+        try:
+            project_id, secret_key = invite.split("/", 1)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid invite format")
+
+        project = await self.project_repo.get_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        if not project.secret_key:
+            raise HTTPException(status_code=400, detail="This project does not have an invite link")
+        if project.secret_key != secret_key:
+            raise HTTPException(status_code=403, detail="Invalid secret key")
+
+        existing = await self.project_repo.get_member(project_id, user_id)
+        if existing:
+            raise HTTPException(status_code=400, detail="You are already a member")
+
+        return await self.project_repo.add_member(project_id=project_id, user_id=user_id, role="member")
+
     async def add_member(self, project_id: str, current_user_id: int, target_user_id: int, role: str = "member"):
         project = await self.project_repo.get_by_id(project_id)
         if not project:
