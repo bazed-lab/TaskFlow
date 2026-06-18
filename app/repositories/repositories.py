@@ -65,10 +65,16 @@ class ProjectRepository:
         )
 
     async def get_members(self, project_id: str):
-        result = await self.session.scalars(
-            select(ProjectMember).where(ProjectMember.project_id == project_id)
+        result = await self.session.execute(
+            select(ProjectMember.id, ProjectMember.user_id, ProjectMember.role, User.username)
+            .join(User, ProjectMember.user_id == User.id)
+            .where(ProjectMember.project_id == project_id)
         )
-        return result.all()
+        rows = result.all()
+        return [
+            {"id": row.id, "user_id": row.user_id, "role": row.role, "username": row.username}
+            for row in rows
+        ]
 
     async def update_member_role(self, project_id: str, user_id: int, role: str):
         member = await self.get_member(project_id, user_id)
