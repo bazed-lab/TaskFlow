@@ -51,22 +51,24 @@ async def get_current_user(
     return user
 
 
-@auth_router.post("/signup", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@auth_router.post("/signup", response_model=MessageResponse, status_code=status.HTTP_201_CREATED, summary="Регистрация")
 async def signup(
         payload: UserRegisterRequest,
         session: AsyncSession = Depends(get_db)
         ):
+    """Создаёт нового пользователя с email, username и паролем."""
     service = AuthService(session)
     await service.singup(email=payload.email, password=payload.password, username=payload.username)
     return MessageResponse(message="Вы зарегистрировались")
 
 
-@auth_router.post("/login", response_model=TokenResponse)
+@auth_router.post("/login", response_model=TokenResponse, summary="Вход")
 async def login(
         payload: UserLoginRequest,
         response: Response,
         session: AsyncSession = Depends(get_db)
         ):
+    """Аутентификация пользователя. Возвращает access и refresh токены."""
     service = AuthService(session)
     user, access_token, refresh_token, token_type = await service.login(email=payload.email, password=payload.password)
     settings = get_settings()
@@ -87,12 +89,13 @@ async def login(
     return TokenResponse(access_token=access_token, refresh_token=refresh_token, token_type=token_type)
 
 
-@auth_router.post("/refresh", response_model=TokenResponse)
+@auth_router.post("/refresh", response_model=TokenResponse, summary="Обновить токены")
 async def refresh(
         request: Request,
         response: Response,
         session: AsyncSession = Depends(get_db)
         ):
+    """Обновляет access и refresh токены по refresh_token из куки."""
     refresh_token_cookie = request.cookies.get("refresh_token")
     if not refresh_token_cookie:
         raise HTTPException(status_code=401, detail="Refresh token not found")
@@ -118,28 +121,31 @@ async def refresh(
     )
     return TokenResponse(access_token=access_token, refresh_token=new_refresh_token, token_type="bearer")
 
-@auth_router.post("/logout", response_model=MessageResponse)
+@auth_router.post("/logout", response_model=MessageResponse, summary="Выход")
 async def logout(
         payload: RefreshTokenRequest,
         current_user = Depends(get_current_user),
 ):
+    """Инвалидирует refresh токен. Требуется access_token."""
     _refresh_blacklist.add(payload.refresh_token)
     return MessageResponse(message="Logged out successfully")
 
 
-@users_router.get("/me", response_model=UserResponse)
+@users_router.get("/me", response_model=UserResponse, summary="Профиль")
 async def get_me(
         current_user = Depends(get_current_user),
 ):
+    """Возвращает информацию о текущем пользователе."""
     return current_user
 
 
-@users_router.patch("/me", response_model=UserResponse)
+@users_router.patch("/me", response_model=UserResponse, summary="Обновить профиль")
 async def update_me(
         payload: UserUpdateRequest,
         current_user = Depends(get_current_user),
         session: AsyncSession = Depends(get_db),
-):
+    ):
+    """Обновляет username, email или пароль текущего пользователя."""
     repo = UserRepository(session)
 
     if payload.username is not None:
