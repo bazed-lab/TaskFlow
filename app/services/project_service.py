@@ -14,8 +14,10 @@ class ProjectService:
         if not member or member.role != "admin":
             raise HTTPException(status_code=403, detail="Only admins can do this")
 
-    async def create_project(self, name: str, description: str | None, owner_id: int):
-        project = await self.project_repo.create(name=name, description=description, owner_id=owner_id)
+    async def create_project(self, name: str, description: str | None, secret_key: str | None, owner_id: int):
+        project = await self.project_repo.create(
+            name=name, description=description, secret_key=secret_key, owner_id=owner_id,
+        )
         await self.project_repo.add_member(project_id=project.id, user_id=owner_id, role="admin")
         return project
 
