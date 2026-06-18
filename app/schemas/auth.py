@@ -8,6 +8,7 @@ class UserRegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     username: str = Field(min_length=3, max_length=50)
+    handle: str = Field(min_length=2, max_length=50, pattern=r"^@[a-zA-Z0-9_.-]+$")
 
 #POST /auth/login
 class UserLoginRequest(BaseModel):
@@ -23,6 +24,7 @@ class RefreshTokenRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     username: str | None = None
     email: EmailStr | None = None
+    handle: str | None = None
     password: str | None = None
     old_password: str | None = None
 
@@ -45,6 +47,7 @@ class UserResponse(BaseModel):
     id: int
     email: EmailStr
     username: str
+    handle: str
     is_active: bool
     is_superuser: bool = False
 

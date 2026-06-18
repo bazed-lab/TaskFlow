@@ -43,6 +43,7 @@ class ProjectMemberResponse(BaseModel):
     user_id: int
     role: str
     username: str
+    handle: str
 
     model_config = ConfigDict(from_attributes=True)
 
