@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.user import User
 from models.project import Project, ProjectMember
+from models.task import Task
 
 
 class UserRepository:
@@ -93,4 +94,34 @@ class ProjectRepository:
                 ProjectMember.user_id == user_id,
             )
         )
+        await self.session.flush()
+
+
+class TaskRepository:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_by_project(self, project_id: str):
+        result = await self.session.scalars(
+            select(Task).where(Task.project_id == project_id).order_by(Task.created_at.desc())
+        )
+        return result.all()
+
+    async def get_by_id(self, task_id: int):
+        return await self.session.scalar(select(Task).where(Task.id == task_id))
+
+    async def create(self, **kwargs):
+        task = Task(**kwargs)
+        self.session.add(task)
+        await self.session.flush()
+        return task
+
+    async def update(self, task: Task, **kwargs):
+        for key, value in kwargs.items():
+            setattr(task, key, value)
+        await self.session.flush()
+        return task
+
+    async def delete(self, task: Task):
+        await self.session.delete(task)
         await self.session.flush()
