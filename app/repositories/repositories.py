@@ -1,5 +1,6 @@
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from models.user import User
 from models.project import Project, ProjectMember
@@ -108,7 +109,18 @@ class TaskRepository:
         return result.all()
 
     async def get_by_id(self, task_id: int):
-        return await self.session.scalar(select(Task).where(Task.id == task_id))
+        return await self.session.scalar(
+            select(Task).where(Task.id == task_id).options(joinedload(Task.completer))
+        )
+
+    async def get_completed(self, project_id: str):
+        result = await self.session.scalars(
+            select(Task)
+            .where(Task.project_id == project_id, Task.status == "done")
+            .options(joinedload(Task.completer))
+            .order_by(Task.completed_at.desc())
+        )
+        return result.all()
 
     async def create(self, **kwargs):
         task = Task(**kwargs)
