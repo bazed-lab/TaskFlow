@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +22,7 @@ class TaskService:
             raise HTTPException(status_code=403, detail="Only admins can do this")
 
     async def create_task(self, project_id: str, user_id: int, title: str, description: str | None,
-                          assigned_to: int | None, priority: str):
+                          assigned_to: int | None, priority: str, deadline: datetime | None = None):
         project = await self.project_repo.get_by_id(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -38,6 +40,7 @@ class TaskService:
             assigned_to=assigned_to,
             created_by=user_id,
             priority=priority,
+            deadline=deadline,
         )
         return task
 
@@ -91,6 +94,38 @@ class TaskService:
 
         task = await self.task_repo.update(task, **kwargs)
         return task
+
+    async def complete_task(self, project_id: str, task_id: int, user_id: int, comment: str | None = None):
+        project = await self.project_repo.get_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        task = await self.task_repo.get_by_id(task_id)
+        if not task or task.project_id != project_id:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        member = await self.project_repo.get_member(project_id, user_id)
+        if not member:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        if task.assigned_to != user_id:
+            raise HTTPException(status_code=403, detail="Only the assignee can complete this task")
+
+        task = await self.task_repo.update(
+            task,
+            status="done",
+            completed_by=user_id,
+            completed_at=datetime.now(timezone.utc),
+            completion_comment=comment,
+        )
+        return task
+
+    async def get_completed_tasks(self, project_id: str, user_id: int):
+        project = await self.project_repo.get_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        await self._check_project_member(project_id, user_id)
+        return await self.task_repo.get_completed(project_id)
 
     async def delete_task(self, project_id: str, task_id: int, user_id: int):
         project = await self.project_repo.get_by_id(project_id)
