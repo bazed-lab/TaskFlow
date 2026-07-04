@@ -77,8 +77,9 @@ class TaskService:
 
         is_admin = member.role == "admin"
         is_assignee = task.assigned_to == user_id
+        is_unassigned = task.assigned_to is None
 
-        if not is_admin and not is_assignee:
+        if not is_admin and not is_assignee and not is_unassigned:
             raise HTTPException(status_code=403, detail="Only admin or assignee can update this task")
 
         if not is_admin:
@@ -108,7 +109,7 @@ class TaskService:
         if not member:
             raise HTTPException(status_code=403, detail="Access denied")
 
-        if task.assigned_to != user_id:
+        if task.assigned_to is not None and task.assigned_to != user_id:
             raise HTTPException(status_code=403, detail="Only the assignee can complete this task")
 
         task = await self.task_repo.update(
@@ -117,7 +118,9 @@ class TaskService:
             completed_by=user_id,
             completed_at=datetime.now(timezone.utc),
             completion_comment=comment,
+            updated_at=datetime.now(timezone.utc),
         )
+        await self.task_repo.session.refresh(task)
         return task
 
     async def get_completed_tasks(self, project_id: str, user_id: int):
