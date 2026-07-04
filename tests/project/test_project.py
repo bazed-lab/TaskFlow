@@ -14,6 +14,7 @@ def second_user_data():
     return {
         "email": "second@example.com",
         "username": "seconduser",
+        "handle": "@seconduser",
         "password": "password123",
     }
 
@@ -109,7 +110,7 @@ class TestAddMember:
 
         resp = await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
         assert resp.status_code == 201
@@ -121,7 +122,7 @@ class TestAddMember:
 
         resp = await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=second_auth_headers,
         )
         assert resp.status_code == 403
@@ -129,7 +130,7 @@ class TestAddMember:
     async def test_add_member_user_not_found(self, client, auth_headers, created_project):
         resp = await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": 99999, "role": "member"},
+            json={"handle": "@nonexistent", "role": "member"},
             headers=auth_headers,
         )
         assert resp.status_code == 404
@@ -139,12 +140,12 @@ class TestAddMember:
         second_user = resp.json()
         await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
         resp = await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
         assert resp.status_code == 400
@@ -157,7 +158,7 @@ class TestUpdateMemberRole:
 
         await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
 
@@ -175,7 +176,7 @@ class TestUpdateMemberRole:
 
         await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
 
@@ -194,7 +195,7 @@ class TestRemoveMember:
 
         await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
 
@@ -210,7 +211,7 @@ class TestRemoveMember:
 
         await client.post(
             f"/projects/{created_project['id']}/members",
-            json={"user_id": second_user["id"], "role": "member"},
+            json={"handle": second_user["handle"], "role": "member"},
             headers=auth_headers,
         )
 

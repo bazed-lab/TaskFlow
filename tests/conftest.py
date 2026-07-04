@@ -63,6 +63,7 @@ async def user_data():
     return {
         "email": "test@example.com",
         "username": "testuser",
+        "handle": "@testuser",
         "password": "password123",
     }
 

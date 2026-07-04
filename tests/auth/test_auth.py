@@ -123,7 +123,7 @@ class TestPatchMe:
     async def test_patch_password(self, client, user_data, auth_headers):
         resp = await client.patch(
             "/users/me",
-            json={"password": "newpassword123"},
+            json={"password": "newpassword123", "old_password": "password123"},
             headers={"Authorization": auth_headers["Authorization"]},
         )
         assert resp.status_code == 200
@@ -132,6 +132,7 @@ class TestPatchMe:
         await client.post("/auth/signup", json={
             "email": "second@example.com",
             "username": "seconduser",
+            "handle": "@seconduser",
             "password": "password123",
         })
         resp = await client.patch(
