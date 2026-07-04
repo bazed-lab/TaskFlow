@@ -135,7 +135,7 @@ export default function TaskList({ projectId, isAdmin, members, currentUserId }:
             const assigneeName = getMemberName(task.assigned_to)
             const isAssignee = task.assigned_to === currentUserId
             const isDone = task.status === 'done'
-            const canComplete = isAssignee && !isDone
+            const canComplete = (task.assigned_to === null || isAssignee) && !isDone
             return (
               <div key={task.id} className="task-card">
                 <div className="task-card-header">
